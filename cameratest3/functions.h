@@ -1,3 +1,5 @@
+#ifndef FUNCTIONS_H
+#define FUNCTIONS_H
 
 // Pin definition for CAMERA_MODEL_AI_THINKER
 #define PWDN_GPIO_NUM     32
@@ -26,3 +28,6 @@ void savePhoto(String path);
 
 void writeFile(fs::FS &fs, const char * path, const char * message);
 void appendFile(fs::FS &fs, const char * path, const char * message);
+
+
+#endif

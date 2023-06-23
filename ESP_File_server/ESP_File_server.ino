@@ -18,68 +18,38 @@
 
 ESP32WebServer server(80);
 
+int pictureNumber = 0;
+
+int peso = 0;
+
+unsigned long previousMillis = 0;     
+
+const long interval = 5000;    
+
 
 const char* ssid     = "ESP32-Access-Point";
 const char* password = "123456789";
 
 fs::FS &SD = SD_MMC;
 
-void initMicroSDCard() {
-  //Serial.println("Starting SD Card");
-  if(!SD_MMC.begin()){
-    Serial.println("SD Card Mount Failed");
-    return;
-  }
-  
-  uint8_t cardType = SD_MMC.cardType();
-  if(cardType == CARD_NONE){
-    Serial.println("No SD Card attached");
-    return;
-  }
-  if(cardType == CARD_MMC){
-    Serial.println("MMC");
-  } else if(cardType == CARD_SD){
-    Serial.println("SDSC");
-  } else if(cardType == CARD_SDHC){
-    Serial.println("SDHC");
-  } else {
-    Serial.println("UNKNOWN");
-  }
-    
-  uint64_t cardSize = SD_MMC.cardSize();
-  int cardSizeInMB = cardSize/(1024 * 1024);
-  Serial.println(cardSizeInMB);
-    
-}
-
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void setup(void){
   Serial.begin(115200);
-  /*
-  if (!WiFi.config(local_IP, gateway, subnet, dns)) { //WiFi.config(ip, gateway, subnet, dns1, dns2);
-    Serial.println("WiFi STATION Failed to configure Correctly"); 
-  } 
-  wifiMulti.addAP(ssid_1, password_1);  // add Wi-Fi networks you want to connect to, it connects strongest to weakest
-  wifiMulti.addAP(ssid_2, password_2);  // Adjust the values in the Network tab
-  wifiMulti.addAP(ssid_3, password_3);
-  wifiMulti.addAP(ssid_4, password_4);  // You don't need 4 entries, this is for example!
-  
-  Serial.println("Connecting ...");
-  while (wifiMulti.run() != WL_CONNECTED) { // Wait for the Wi-Fi to connect: scan for Wi-Fi networks, and connect to the strongest of the networks above
-    delay(250); Serial.print('.');
-  }
-  */
 
   WiFi.softAP(ssid);
   
   Serial.println("\nConnected to "+WiFi.SSID()+" Use IP address: "+WiFi.localIP().toString()); // Report which SSID and IP is in use
-  // The logical name http://fileserver.local will also access the device if you have 'Bonjour' running or your system supports multicast dns
-  if (!MDNS.begin(servername)) {          // Set your preferred server name, if you use "myserver" the address would be http://myserver.local/
-    Serial.println(F("Error setting up MDNS responder!")); 
-    ESP.restart(); 
-  } 
+  
+  // Initialize the camera
+  Serial.print("Initializing the camera module...");
+  configESPCamera();
+  Serial.println("Camera OK!");
 
+  // Initialize the MicroSD
+  Serial.print("Initializing the MicroSD card module... ");
   initMicroSDCard();
+  
+  writeFile(SD_MMC,"/log.txt","Peso de la balanza\n");
   //----------------------------------------------------------------------   
   ///////////////////////////// Server Commands 
   server.on("/",         HomePage);
@@ -96,6 +66,20 @@ void setup(void){
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void loop(void){
+
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) 
+  {
+    previousMillis = currentMillis;
+      // Path where new picture will be saved in SD Card
+    String path = "/Images/picture" + String(pictureNumber) +".jpg";
+    savePhoto(path);
+    pictureNumber +=1;
+    String peso = "Peso" + String(pictureNumber)+ "\n";
+    appendFile(SD_MMC,"/log.txt",peso.c_str());
+  }
+
   server.handleClient(); // Listen for client connections
 }
 
