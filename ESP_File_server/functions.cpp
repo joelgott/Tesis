@@ -127,6 +127,8 @@ void initMicroSDCard() {
   uint64_t cardSize = SD_MMC.cardSize();
   int cardSizeInMB = cardSize/(1024 * 1024);
   Serial.println(cardSizeInMB);
+  
+  //SD_present = true;
     
 }
 
@@ -151,12 +153,6 @@ void savePhoto(String path){
   }
   file.close();
   esp_camera_fb_return(fb); 
-  
-  // Turns off the ESP32-CAM white on-board LED (flash) connected to GPIO 4
-  pinMode(4, OUTPUT);
-  digitalWrite(4, LOW);
-  rtc_gpio_hold_en(GPIO_NUM_4);
-
 }
 
 void writeFile(fs::FS &fs, const char * path, const char * message){

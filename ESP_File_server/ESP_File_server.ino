@@ -13,8 +13,7 @@
 #include "soc/soc.h"           // Disable brownour problems
 #include "soc/rtc_cntl_reg.h"  // Disable brownour problems
 #include "driver/rtc_io.h"
-
-
+#include "functions.h"
 
 ESP32WebServer server(80);
 
@@ -22,13 +21,14 @@ int pictureNumber = 0;
 
 int peso = 0;
 
+int count = 0;
+
 unsigned long previousMillis = 0;     
 
 const long interval = 5000;    
 
-
 const char* ssid     = "ESP32-Access-Point";
-const char* password = "123456789";
+const char* password = "12345678";
 
 fs::FS &SD = SD_MMC;
 
@@ -36,9 +36,9 @@ fs::FS &SD = SD_MMC;
 void setup(void){
   Serial.begin(115200);
 
-  WiFi.softAP(ssid);
+  WiFi.softAP(ssid,password);
   
-  Serial.println("\nConnected to "+WiFi.SSID()+" Use IP address: "+WiFi.localIP().toString()); // Report which SSID and IP is in use
+  Serial.println("\nConnected to IP address: "+WiFi.softAPIP().toString()); // Report which SSID and IP is in use
   
   // Initialize the camera
   Serial.print("Initializing the camera module...");
@@ -54,12 +54,10 @@ void setup(void){
   ///////////////////////////// Server Commands 
   server.on("/",         HomePage);
   server.on("/download", File_Download);
-  server.on("/upload",   File_Upload);
-  server.on("/fupload",  HTTP_POST,[](){ server.send(200);}, handleFileUpload);
-  server.on("/stream",   File_Stream);
   server.on("/delete",   File_Delete);
+  server.on("/show_images", Show_Images);
+  server.on("/download_all", File_Download_All);
   server.on("/dir",      SD_dir);
-  
   ///////////////////////////// End of Request commands
   server.begin();
   Serial.println("HTTP server started");
@@ -69,7 +67,7 @@ void loop(void){
 
   unsigned long currentMillis = millis();
 
-  if (currentMillis - previousMillis >= interval) 
+  if ((currentMillis - previousMillis >= interval) && count <= 6)
   {
     previousMillis = currentMillis;
       // Path where new picture will be saved in SD Card
@@ -78,6 +76,7 @@ void loop(void){
     pictureNumber +=1;
     String peso = "Peso" + String(pictureNumber)+ "\n";
     appendFile(SD_MMC,"/log.txt",peso.c_str());
+    count += 1;
   }
 
   server.handleClient(); // Listen for client connections
@@ -88,8 +87,8 @@ void loop(void){
 void HomePage(){
   SendHTML_Header();
   webpage += F("<a href='/download'><button>Download</button></a>");
-  webpage += F("<a href='/upload'><button>Upload</button></a>");
-  webpage += F("<a href='/stream'><button>Stream</button></a>");
+  webpage += F("<a href='/show_images'><button>Images</button></a>");
+  webpage += F("<a href='/download_all'><button>Download all</button></a>");
   webpage += F("<a href='/delete'><button>Delete</button></a>");
   webpage += F("<a href='/dir'><button>Directory</button></a>");
   append_page_footer();
@@ -117,59 +116,38 @@ void SD_file_download(String filename){
   } else ReportSDNotPresent();
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-void File_Upload(){
-  Serial.println("File upload stage-1");
-  append_page_header();
-  webpage += F("<h3>Select File to Upload</h3>"); 
-  webpage += F("<FORM action='/fupload' method='post' enctype='multipart/form-data'>");
-  webpage += F("<input class='buttons' style='width:40%' type='file' name='fupload' id = 'fupload' value=''><br>");
-  webpage += F("<br><button class='buttons' style='width:10%' type='submit'>Upload File</button><br>");
-  webpage += F("<a href='/'>[Back]</a><br><br>");
-  append_page_footer();
-  Serial.println("File upload stage-2");
-  server.send(200, "text/html",webpage);
-}
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-File UploadFile; 
-void handleFileUpload(){ // upload a new file to the Filing system
-  Serial.println("File upload stage-3");
-  HTTPUpload& uploadfile = server.upload(); // See https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WebServer/srcv
-                                            // For further information on 'status' structure, there are other reasons such as a failed transfer that could be used
-  if(uploadfile.status == UPLOAD_FILE_START)
-  {
-    Serial.println("File upload stage-4");
-    String filename = uploadfile.filename;
-    if(!filename.startsWith("/")) filename = "/"+filename;
-    Serial.print("Upload File Name: "); Serial.println(filename);
-    SD.remove(filename);                         // Remove a previous version, otherwise data is appended the file again
-    UploadFile = SD.open(filename, FILE_WRITE);  // Open the file for writing in SPIFFS (create it, if doesn't exist)
-    filename = String();
-  }
-  else if (uploadfile.status == UPLOAD_FILE_WRITE)
-  {
-    Serial.println("File upload stage-5");
-    if(UploadFile) UploadFile.write(uploadfile.buf, uploadfile.currentSize); // Write the received bytes to the file
-  } 
-  else if (uploadfile.status == UPLOAD_FILE_END)
-  {
-    if(UploadFile)          // If the file was successfully created
-    {                                    
-      UploadFile.close();   // Close the file again
-      Serial.print("Upload Size: "); Serial.println(uploadfile.totalSize);
-      webpage = "";
-      append_page_header();
-      webpage += F("<h3>File was successfully uploaded</h3>"); 
-      webpage += F("<h2>Uploaded File Name: "); webpage += uploadfile.filename+"</h2>";
-      webpage += F("<h2>File Size: "); webpage += file_size(uploadfile.totalSize) + "</h2><br>"; 
-      append_page_footer();
-      server.send(200,"text/html",webpage);
-    } 
-    else
-    {
-      ReportCouldNotCreateFile("upload");
+void File_Download_All(){
+  SendHTML_Header();
+  if (SD_present) { 
+    File root = SD.open("/Images/");
+    if(!root){
+      return;
     }
-  }
+    if(!root.isDirectory()){
+      return;
+    }
+    File file = root.openNextFile();
+    while(file){
+      if(file.isDirectory()){
+
+      }
+      else
+      {
+        server.sendHeader("Content-Type", "text/text");
+        server.sendHeader("Content-Disposition", "attachment; filename="+String(file.name()));
+        server.sendHeader("Connection", "close");
+        server.streamFile(file, "application/octet-stream");
+        file.close();
+      }
+      file = root.openNextFile();
+    }
+    file.close();
+  } else ReportSDNotPresent();
+  append_page_footer();
+  SendHTML_Content();
+  SendHTML_Stop();
 }
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void SD_dir(){
   if (SD_present) { 
@@ -195,12 +173,34 @@ void SD_dir(){
     SendHTML_Stop();   // Stop is needed because no content length was sent
   } else ReportSDNotPresent();
 }
+
+void Show_Images(){
+  if (SD_present) { 
+    File root = SD.open("/");
+    if (root) {
+      root.rewindDirectory();
+      SendHTML_Header();
+      webpage += F("<h3 class='rcorners_m'>Images in the SD Card</h3><br>");
+      webpage += F("<table align='center'>");
+      webpage += F("<tr><th>Name/Type</th><th style='width:20%'>Type File/Dir</th><th>File Size</th></tr>");
+      printDirectory("/Images",0);
+      webpage += F("</table>");
+      SendHTML_Content();
+      root.close();
+    }
+    else 
+    {
+      SendHTML_Header();
+      webpage += F("<h3>No Files Found</h3>");
+    }
+    append_page_footer();
+    SendHTML_Content();
+    SendHTML_Stop();   // Stop is needed because no content length was sent
+  } else ReportSDNotPresent();
+}
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void printDirectory(const char * dirname, uint8_t levels){
   File root = SD.open(dirname);
-  #ifdef ESP8266
-  root.rewindDirectory(); //Only needed for ESP8266
-  #endif
   if(!root){
     return;
   }
@@ -223,12 +223,7 @@ void printDirectory(const char * dirname, uint8_t levels){
       webpage += "<tr><td>"+String(file.name())+"</td>";
       Serial.print(String(file.isDirectory()?"Dir ":"File ")+String(file.name())+"\t");
       webpage += "<td>"+String(file.isDirectory()?"Dir":"File")+"</td>";
-      int bytes = file.size();
-      String fsize = "";
-      if (bytes < 1024)                     fsize = String(bytes)+" B";
-      else if(bytes < (1024 * 1024))        fsize = String(bytes/1024.0,3)+" KB";
-      else if(bytes < (1024 * 1024 * 1024)) fsize = String(bytes/1024.0/1024.0,3)+" MB";
-      else                                  fsize = String(bytes/1024.0/1024.0/1024.0,3)+" GB";
+      String fsize = file_size(file.size());
       webpage += "<td>"+fsize+"</td></tr>";
       Serial.println(String(fsize));
     }
@@ -299,6 +294,7 @@ void SendHTML_Header(){
   server.sendContent(webpage);
   webpage = "";
 }
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void SendHTML_Content(){
   server.sendContent(webpage);
