@@ -1,7 +1,5 @@
 import machine
 import uasyncio
-
-
         
 async def handler(uart):
     while True:
@@ -18,7 +16,7 @@ async def main():
     uasyncio.create_task(handler(uart))
     
     while True:
-        await uasyncio.sleep_ms(500)
+        await uasyncio.sleep_ms(5000)
 
 
 uasyncio.run(main())

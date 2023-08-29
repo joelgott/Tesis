@@ -28,18 +28,18 @@ async def handler(uart):
 
 async def main():
     
-    uart = machine.UART(2) 
+    #uart = machine.UART(0) 
 
-    uart.init(baudrate=115200, bits=8, parity=None, stop=1)
+    #uart.init(baudrate=115200, bits=8, parity=None, stop=1)
 
-    uasyncio.create_task(handler(uart))
-    uart.write("Arrancando")
+    #uasyncio.create_task(handler(uart))
+    #uart.write("Arrancando")
     #try:
     #    uos.stat("/sd")
     #except:
     #    uos.mount(machine.SDCard(), "/sd")
     #uasyncio.create_task(timelapse(1000,3))
-    uart.write("listo")
+    #uart.write("listo")
     while True:
         await uasyncio.sleep_ms(1000)
 
