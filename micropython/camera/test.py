@@ -14,3 +14,8 @@ camera.deinit()
 
 
 
+    #uart = machine.UART(0) 
+
+    #uart.init(baudrate=115200, bits=8, parity=None, stop=1)
+
+    #uasyncio.create_task(handler(uart))

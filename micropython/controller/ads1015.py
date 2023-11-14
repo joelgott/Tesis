@@ -3,7 +3,7 @@ from ads1x15 import ADS1015
 import uasyncio
 import time
 
-i2c = I2C(0)
+i2c = I2C(scl=Pin(22), sda=Pin(21))
 adc = ADS1015(i2c, 72, 2)
 
 adc.set_conv(0, 0, 1) # start the first conversion

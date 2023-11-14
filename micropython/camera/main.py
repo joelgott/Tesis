@@ -1,7 +1,14 @@
 import uos
-import machine
+from machine import Pin, SDCard
 import camera
 import uasyncio
+
+led = Pin(4,Pin.OUT)
+rx = Pin(33,Pin.IN,Pin.PULL_DOWN)
+
+wait_time = 3000
+
+debug = True
 
 def take_picture(name):
     camera.init(0, format=camera.JPEG, fb_location=camera.PSRAM)
@@ -11,36 +18,66 @@ def take_picture(name):
     imgFile.close()
     camera.deinit()
 
-async def timelapse(photo_time, max_amount = 1):
-    print("empieza el timelapse")
-    count = 0
-    while count < max_amount:
-        take_picture("Foto_{0}".format(str(count)))
-        print("saque una foto")
-        count += 1
-        await uasyncio.sleep_ms(photo_time)
+def start_sd():
+    try:
+        uos.stat("/sd")
+        return True
+    except:
+        uos.mount(SDCard(), "/sd")
+        return False    
         
-async def handler(uart):
-    while True:
-        if uart.any():
-            msg = uart.readline()
-            uart.write(msg)
+def empty_sd():
+    try:
+        files = uos.listdir("sd/Images")
+        for file in files:
+            uos.remove("sd/Images/{}".format(file))
+        print("SD card contents erased succesfully")
+    except:
+        print("Error erasing contents from SD card")
+
+def unmount_sd():
+    try:
+        uos.umount("/sd")
+    except:
+        pass
 
 async def main():
     
-    #uart = machine.UART(0) 
+    # err = start_sd()
+    # if err == True:
+    #     led.value = True
+    #     while 1:
+    #         led.value = not led.value
+    #         await uasyncio.sleep_ms(200)
+    start_sd()
+    empty_sd()
+    
+    count = 0
+    done = False    
+    time_counter = 0
+    Timelapse_Running = True
 
-    #uart.init(baudrate=115200, bits=8, parity=None, stop=1)
+    while Timelapse_Running:
+        if rx.value():
+            if done == False:
+                take_picture("Foto_{0}".format(str(count)))
+                count += 1
+                done = True
+            else:
+                time_counter += 1 
+                if time_counter > wait_time:
+                    Timelapse_Running = False
+        else :
+            time_counter = 0
+            done = False
+        await uasyncio.sleep_ms(1)
 
-    #uasyncio.create_task(handler(uart))
-    #uart.write("Arrancando")
-    #try:
-    #    uos.stat("/sd")
-    #except:
-    #    uos.mount(machine.SDCard(), "/sd")
-    #uasyncio.create_task(timelapse(1000,3))
-    #uart.write("listo")
+    unmount_sd()
+
     while True:
+        led.on()
+        await uasyncio.sleep_ms(50)
+        led.off()
         await uasyncio.sleep_ms(1000)
 
 uasyncio.run(main())
