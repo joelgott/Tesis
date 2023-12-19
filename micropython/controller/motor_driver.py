@@ -1,8 +1,8 @@
 from machine import Pin
 import uasyncio
 
-Pull = Pin(18,Pin.OPEN_DRAIN)
-Dir = Pin(19,Pin.OPEN_DRAIN)
+Pull = Pin(25,Pin.OPEN_DRAIN)
+Dir = Pin(26,Pin.OPEN_DRAIN)
 
 async def main(duty):
     Dir.value(1)
@@ -13,4 +13,4 @@ async def main(duty):
         await uasyncio.sleep_ms(duty)
 
 
-uasyncio.run(main(100))
+uasyncio.run(main(10000))
