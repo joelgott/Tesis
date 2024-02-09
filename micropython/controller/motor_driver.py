@@ -1,16 +1,17 @@
-from machine import Pin
+from machine import Pin, PWM
 import uasyncio
 
-Pull = Pin(25,Pin.OPEN_DRAIN)
-Dir = Pin(26,Pin.OPEN_DRAIN)
+Pull = Pin(26,Pin.OUT)
+Dir = Pin(25,Pin.OUT)
 
-async def main(duty):
-    Dir.value(1)
-    while True:
-        Pull.value(0)
-        await uasyncio.sleep_ms(duty)
-        Pull.value(1)
-        await uasyncio.sleep_ms(duty)
+async def main(time, speed):
+    Dir.value(0)
+    led = Pin(2, Pin.OUT, value = False)
+    pwm1 = PWM(Pull, freq=speed, duty_u16=32768)  # create a PWM object on a pin
+    pwm2 = PWM(led, freq=speed, duty_u16=32768)  # create a PWM object on a pin
+    #pwm.init(freq=20, duty_ns=5000)
+    await uasyncio.sleep_ms(time)
+    pwm1.deinit()
+    pwm2.deinit()
 
-
-uasyncio.run(main(10000))
+uasyncio.run(main(10000,500))

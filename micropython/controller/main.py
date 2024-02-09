@@ -13,6 +13,8 @@ default_threshold_weight = 5
 default_final_weight = 200
 user_input = default_t1
 
+default_sps = 50
+
 state_texts = ["t1 (ms):" , "t2 (min):" , "umbral peso (g):", "Peso final (g):"]
 default_values = [default_t1, default_t2, default_threshold_weight, default_final_weight]
 cfg_vars = default_values.copy()
@@ -25,7 +27,7 @@ I2C_NUM_ROWS = 2
 I2C_NUM_COLS = 16
 
 volts2weight = 229000
-max_steps = 50 # 600 * 200 / 2 #  600[mm] / 2 [mm/rev] * 200  [step/rev]
+max_steps = 300000 # 600 * 200 / 2 #  600[mm] / 2 [mm/rev] * 1000  [step/rev]
 steps_taken = 0
 
 i2c = I2C(scl=Pin(22), sda=Pin(21))
@@ -121,7 +123,7 @@ async def run_motor(stepspersecond,exp_terminada,avalancha):
         if exp_terminada.is_set():
             break
         if (not avalancha.is_set()):
-            uasyncio.create_task(make_step(10))
+            uasyncio.create_task(make_step(1))
             steps += 1
             steps_taken = steps
             lcd.home()
@@ -162,7 +164,7 @@ async def cam_weight(cams, t1, t2, delta_weight, max_weight, exp_terminada, aval
             lcd.print("exp terminada")
             lcd.set_cursor(0,1)
             lcd.print("<- " + str(steps_taken) + " pasos")
-            uasyncio.create_task(motor_return(steps_taken,2))
+            uasyncio.create_task(motor_return(steps_taken,default_sps))
             break
         for cam in cams:
             uasyncio.create_task(take_photo(cam,100))
@@ -206,7 +208,7 @@ async def main():
         if config_finished and first_time:
             lcd.clear()
             first_time = False
-            uasyncio.create_task(run_motor(2,exp_finished,avalancha))
+            uasyncio.create_task(run_motor(default_sps,exp_finished,avalancha))
             uasyncio.create_task(cam_weight(cams,cfg_vars[0],cfg_vars[1],cfg_vars[2],cfg_vars[3],exp_finished,avalancha))
         else:
             await uasyncio.sleep_ms(1000)
