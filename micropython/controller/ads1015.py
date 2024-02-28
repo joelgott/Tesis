@@ -6,7 +6,6 @@ import time
 i2c = I2C(scl=Pin(22), sda=Pin(21))
 adc = ADS1115(i2c, 72, 5)
 
-#adc.set_conv(4, 0, 1) # start the first conversion
 
 start = time.ticks_us() # get millisecond counter
 #adc.read_rev()
@@ -14,18 +13,38 @@ delta = time.ticks_diff(time.ticks_us(), start)
 
 volts2weight = 229000
 
+class LoadCell():
+    def __init__(self, i2c = I2C(scl=Pin(22), sda=Pin(21))):
+        self.i2c = i2c
+        self.adc = ADS1115(i2c, 72, 5)
+        self.volts2weight = -229000
+        self.last_measurement = adc.raw_to_v(adc.read(4, 0, 1))
+        self.tare = 0
+        self.make_tare()
+        self.last_weight = 0
+
+    def make_tare(self, prom_cycles = 25):
+        self.tare = self.measure_weight(prom_cycles)
+
+    def measure_weight(self, prom_cycles):
+        prom_value = 0
+        for i in range(prom_cycles):
+            current_measurement = adc.raw_to_v(adc.read(4, 0, 1))
+            actual_value = current_measurement*self.volts2weight
+            prom_value += float(actual_value)/prom_cycles
+        return prom_value
+
+    def get_weight(self, prom_cycles):
+        self.last_weight = self.measure_weight(prom_cycles) - self.tare
+
+    async def run(self, wait_time = 500, prom_cycles = 1):
+        while True:
+            self.get_weight(prom_cycles)
+            await uasyncio.sleep_ms(wait_time)
+
 async def main():
-    last_value = 0
-    actual_value = 0
-    filtered_value = 0
-    last_measurement = adc.raw_to_v(adc.read(4, 0, 1))
-    while True:
-        actual_value = (last_measurement - adc.raw_to_v(adc.read(4, 0, 1)))*volts2weight
-        filtered_value = round(0.7*last_value + 0.3*actual_value,2)
-        last_value = filtered_value
-        print(filtered_value)
-        delta = time.ticks_diff(time.ticks_us(), start) 
-#         print(delta)
-        await uasyncio.sleep_ms(100)
-        
-uasyncio.run(main())
+    mycell = LoadCell()
+    await mycell.run()
+
+if __name__ == "__main__":
+    uasyncio.run(main())
