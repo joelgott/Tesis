@@ -6,11 +6,6 @@ import time
 i2c = I2C(scl=Pin(22), sda=Pin(21))
 adc = ADS1115(i2c, 72, 5)
 
-
-start = time.ticks_us() # get millisecond counter
-#adc.read_rev()
-delta = time.ticks_diff(time.ticks_us(), start)
-
 volts2weight = 229000
 
 class LoadCell():
@@ -22,6 +17,7 @@ class LoadCell():
         self.tare = 0
         self.make_tare()
         self.last_weight = 0
+        self.weights = []
 
     def make_tare(self, prom_cycles = 25):
         self.tare = self.measure_weight(prom_cycles)
@@ -40,6 +36,7 @@ class LoadCell():
     async def run(self, wait_time = 500, prom_cycles = 1):
         while True:
             self.get_weight(prom_cycles)
+            self.weights.append((self.last_weight,time.localtime))
             await uasyncio.sleep_ms(wait_time)
 
 async def main():

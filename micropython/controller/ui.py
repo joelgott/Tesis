@@ -1,12 +1,13 @@
 from lcd_i2c import LCD
 from machine import I2C, Pin
+import ssd1306
 import uasyncio
 from primitives import Pushbutton
 
 default_t1 = 2000
 default_t2 = 1
 default_threshold_weight = 5
-default_final_weight = 100
+default_final_weight = 50
 
 state_texts = ["t1 (ms):" , "t2 (min):" , "umbral peso (g):", "Peso final (g):"]
 default_values = [default_t1, default_t2, default_threshold_weight, default_final_weight]
@@ -19,13 +20,13 @@ class UserInterface:
         I2C_NUM_ROWS = 2
         I2C_NUM_COLS = 16
         self.i2c = i2c
-        self.lcd = LCD(addr=I2C_ADDR, cols=I2C_NUM_COLS, rows=I2C_NUM_ROWS, i2c=self.i2c) 
-        b1 = Pin(13, Pin.IN, Pin.PULL_UP)
-        b2 = Pin(12, Pin.IN, Pin.PULL_UP)
-        b3 = Pin(14, Pin.IN, Pin.PULL_UP)
-        b4 = Pin(27, Pin.IN, Pin.PULL_UP)        
-        self.config_buttons(b1,b2,b3,b4)
-        self.lcd.begin()
+        #self.lcd = LCD(addr=I2C_ADDR, cols=I2C_NUM_COLS, rows=I2C_NUM_ROWS, i2c=self.i2c) 
+        #self.lcd.begin()
+        self.display = ssd1306.SSD1306_I2C(128, 64, i2c)        
+        self.b1 = Pin(13, Pin.IN, Pin.PULL_UP)
+        self.b2 = Pin(12, Pin.IN, Pin.PULL_UP)
+        self.b3 = Pin(14, Pin.IN, Pin.PULL_UP)
+        self.b4 = Pin(27, Pin.IN, Pin.PULL_UP)        
         self.config_vars = default_values.copy()
         self.state = 0
         self.config_finished = False
@@ -77,22 +78,31 @@ class UserInterface:
             self.update_display(state_texts[self.state],str(self.config_vars[self.state]))
 
     async def config(self):
+        self.config_buttons(self.b1,self.b2,self.b3,self.b4)
         while True:
             if self.state == len(self.config_vars):
                 break
             await uasyncio.sleep_ms(100)
-        self.lcd.clear()        
-    
+        try:
+            self.lcd.clear()        
+        except:
+            self.display.fill(0)
     def update_display(self, first_column, second_column = ""):  
-        self.lcd.clear()
-        self.lcd.set_cursor(0,0)
-        self.lcd.print(first_column)
-        self.lcd.set_cursor(0,1)
-        self.lcd.print(second_column)
+        try:
+            self.lcd.clear()
+            self.lcd.set_cursor(0,0)
+            self.lcd.print(first_column)
+            self.lcd.set_cursor(0,1)
+            self.lcd.print(second_column)
+        except:
+            self.display.fill(0)    
+            self.display.text(first_column, 0, 0, 1)
+            self.display.text(second_column, 0, 40, 1)
+            self.display.show()
                 
 async def main():
-    my_motor = UserInterface()
-    await my_motor.config()
+    ui = UserInterface()
+    await ui.config()
     print("termine")
 
 if __name__ == "__main__":

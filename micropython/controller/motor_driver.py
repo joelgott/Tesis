@@ -17,8 +17,11 @@ class Motor:
         self.pwm = PWM(self.pull, freq=self.freq, duty_u16=32768)  # create a PWM object on a pin
 
     def stop(self):
-        self.pwm.deinit()
-
+        try:
+            self.pwm.deinit()
+        except:
+            pass
+    
     async def move(self, distance, dir = 0):
         self.dir.value(dir)
         wait_time = int(distance * 1000.0 * self.steps_per_rev / (self.mm_per_rev * self.freq))
