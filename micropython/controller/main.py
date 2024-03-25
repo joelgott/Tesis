@@ -30,7 +30,7 @@ async def main():
             avalancha.clear()
             uasyncio.create_task(motor.move_with_stop(avalancha))  
         if not avalancha.is_set():
-            loadcell.get_weight(3)
+            loadcell.get_weight(5)
             userinterface.update_display("peso="+str(round(loadcell.last_weight,3)))
             uasyncio.create_task(led.take_photo(min(100,int(userinterface.config_vars[0]*0.5))))
             uasyncio.create_task(cam.take_photo(min(100,int(userinterface.config_vars[0]*0.5))))
