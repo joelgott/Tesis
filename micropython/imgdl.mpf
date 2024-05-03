@@ -1,4 +1,0 @@
-open COM5
-cd sd/Images
-lcd downloads
-mget .*\.jpg

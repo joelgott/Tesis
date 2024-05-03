@@ -2,7 +2,7 @@ import uos
 from machine import SDCard
 import uasyncio
 
-class SDCard:
+class SD_Card:
     def __init__(self):
         pass
 

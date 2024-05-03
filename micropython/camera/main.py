@@ -1,6 +1,6 @@
 
 import uasyncio
-from sdcard import SDCard
+from sdcard import SD_Card
 from espcam import EspCam
 from machine import Pin
 
@@ -13,7 +13,7 @@ debug = True
 async def main():
     
     espcam = EspCam()
-    sdcard = SDCard()
+    sdcard = SD_Card()
     sdcard.mount_sd()
     sdcard.empty_sd()
     
@@ -25,12 +25,14 @@ async def main():
     while Timelapse_Running:
         if rx.value():
             if done == False:
+                print("Imagen tomada")
                 img = espcam.take_picture()
                 sdcard.save_file("Foto_{0}".format(str(count)), img)
                 count += 1
                 done = True
             else:
-                time_counter += 1 
+                time_counter += 1
+                #print("timercounter = ", time_counter)
                 if time_counter > wait_time:
                     Timelapse_Running = False
         else :
@@ -38,9 +40,10 @@ async def main():
             done = False
         await uasyncio.sleep_ms(1)
 
-    unmount_sd()
+    sdcard.unmount_sd()
 
     while True:
+        await espcam.flash()
         
 
 uasyncio.run(main())

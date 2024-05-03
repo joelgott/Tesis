@@ -4,12 +4,12 @@ import uasyncio
 #max_steps = 300000 # 600 * 200 / 2 #  600[mm] * 0.5 [rev/mm] * 1000  [step/rev]
 # Dir = 1 vuelve, dir = 0 avanza
 class Motor:
-    def __init__(self, freq = 500):
+    def __init__(self, freq = 500, steps_per_rev = 1000):
         self.pull = Pin(26,Pin.OUT)
         self.dir = Pin(25,Pin.OUT)
         self.freq = freq
         self.pwm = None
-        self.steps_per_rev = 1000
+        self.steps_per_rev = steps_per_rev
         self.mm_per_rev = 7.7
         self.distance_moved = 0
 
@@ -42,6 +42,7 @@ class Motor:
 
     async def return_back(self, dir = 1):
         await self.move(self.distance_moved,dir)
+        self.distance_moved = 0
 
 async def main():
     my_motor = Motor(1000)

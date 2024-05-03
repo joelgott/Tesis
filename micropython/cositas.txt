@@ -1,6 +1,0 @@
-
-open COM3
-cd sd/Images
-lcd downloads
-mget .*\.jpg
-mget (?=.*\.jpg)(?=.*picture)
