@@ -1,5 +1,6 @@
 import ast
 import matplotlib.pyplot as plt
+import numpy
 
 with open('pesos.txt') as f:
     lines = ast.literal_eval(f.read())
@@ -16,8 +17,13 @@ print(vectors[0])
 x = vectors[0]
 y = vectors[1]
 
+dx = numpy.diff(x)
+
 # plot
 fig, ax = plt.subplots()
-
 ax.plot(y, x, linewidth=2.0)
+
+fig2, ax2 = plt.subplots()
+ax2.plot(y[:-1], dx, linewidth=2.0)
+
 plt.show()
