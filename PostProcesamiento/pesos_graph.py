@@ -22,10 +22,13 @@ dx = numpy.diff(x)
 # plot
 fig, ax = plt.subplots()
 ax.plot(y, x, linewidth=2.0)
+plt.ylabel("Masa acumulada (gramos)")
+plt.xlabel("Tiempo (segundos)")
 
 fig2, ax2 = plt.subplots()
-ax2.plot(y[:-1], dx, linewidth=2.0)
-
-plt.ylabel("Masa depositada (gramos)")
+ax2.plot(y[:-5], dx[:-4], linewidth=2.0)
+ax2.hlines(10, y[0], y[-1], colors = 'red', linestyles = 'dotted')
+plt.ylabel("Variación de masa acumulada (Delta gramos)")
 plt.xlabel("Tiempo (segundos)")
+
 plt.show()
