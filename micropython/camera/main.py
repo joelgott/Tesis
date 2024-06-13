@@ -6,7 +6,7 @@ from machine import Pin
 
 rx = Pin(33,Pin.IN,Pin.PULL_DOWN)
 
-wait_time = 3000
+wait_time = 2000
 
 debug = True
 
@@ -31,14 +31,14 @@ async def main():
                 count += 1
                 done = True
             else:
-                time_counter += 1
-                #print("timercounter = ", time_counter)
+                time_counter += 10
+                print("timercounter = ", time_counter)
                 if time_counter > wait_time:
                     Timelapse_Running = False
         else :
             time_counter = 0
             done = False
-        await uasyncio.sleep_ms(1)
+        await uasyncio.sleep_ms(10)
 
     sdcard.unmount_sd()
 

@@ -4,10 +4,10 @@ import ssd1306
 import uasyncio
 from primitives import Pushbutton
 
-default_t1 = 2000
-default_t2 = 1
-default_threshold_weight = 5
-default_final_weight = 50
+default_t1 = 1000
+default_t2 = 2
+default_threshold_weight = 15
+default_final_weight = 400
 
 state_texts = ["t1 (ms):" , "t2 (min):" , "umbral peso (g):", "Peso final (g):"]
 default_values = [default_t1, default_t2, default_threshold_weight, default_final_weight]

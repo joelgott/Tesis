@@ -9,6 +9,11 @@ class EspCam():
 
     def take_picture(name):
         camera.init(0, format=camera.JPEG, fb_location=camera.PSRAM)
+        camera.speffect(camera.EFFECT_NONE)
+        camera.saturation(-1)
+        camera.whitebalance(camera.WB_OFFICE)
+        camera.quality(3)
+        camera.framesize(camera.FRAME_VGA)
         img = camera.capture()
         camera.deinit()
         return img

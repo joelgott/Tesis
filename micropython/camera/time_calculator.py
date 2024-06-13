@@ -25,9 +25,10 @@ async def main():
     except:
         pass
     camera.speffect(camera.EFFECT_NONE)
+    camera.quality(5)
     time_taken = []
     first_size = 0
-    size_len = 12 
+    size_len = 10
     if (size_len + first_size) > len(framesizes):
         raise ValueError("Out of index")
     for i in range(size_len):     # Hay que tener cuidado con que le alcanze el tiempo para guardar la foto

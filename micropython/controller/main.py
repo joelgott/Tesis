@@ -17,7 +17,6 @@ async def main():
     await userinterface.config()
     loadcell = LoadCell(i2c) 
     motor = Motor(200)
-    exp_finished = Event()
     avalancha = Event()
     last_avalanch = 0
     uasyncio.create_task(motor.move_with_stop(avalancha))
@@ -26,8 +25,10 @@ async def main():
             avalancha.set()
             for i in range(userinterface.config_vars[1]*60):
                 userinterface.update_display("avalancha", "faltan {} s".format(userinterface.config_vars[1]*60 - i),"OLED")
-                await uasyncio.sleep_ms(userinterface.config_vars[1]*1000)
+                await uasyncio.sleep_ms(1000)
+            loadcell.get_weight(10)
             last_avalanch = loadcell.last_weight
+            userinterface.update_display("ultimo peso", "medido: {}g".format(last_avalanch),"OLED")
             avalancha.clear()
             uasyncio.create_task(motor.move_with_stop(avalancha))  
         if not avalancha.is_set():
@@ -41,12 +42,12 @@ async def main():
     cam_lat.shutoff_cam()
     cam_front.shutoff_cam()
     led.shutoff_cam()
-    exp_finished.set()
     with open('data.txt','w') as f:
         f.write(str(loadcell.weights))
     userinterface.update_display("Regresando", "{} mm".format(motor.distance_moved), "OLED")
     await motor.return_back()
     userinterface.update_display("Experiencia", "Terminada")
+    userinterface.update_display("", "", "OLED")
     
 
 if __name__ == "__main__":

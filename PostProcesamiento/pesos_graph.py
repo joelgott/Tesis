@@ -1,7 +1,7 @@
 import ast
 import matplotlib.pyplot as plt
 
-with open('pesos.txt') as f:
+with open('data.txt') as f:
     lines = ast.literal_eval(f.read())
     print(lines)
     #x = [line.split()[0] for line in lines]
@@ -20,4 +20,6 @@ y = vectors[1]
 fig, ax = plt.subplots()
 
 ax.plot(y, x, linewidth=2.0)
+plt.ylabel("Masa depositada (gramos)")
+plt.xlabel("Tiempo (segundos)")
 plt.show()

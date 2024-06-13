@@ -7,11 +7,10 @@ class SD_Card:
         pass
 
     def mount_sd(self):
-        try:
-            uos.stat("/sd")
-            return True
-        except:
+        if 'sd' not in uos.listdir(""):
             uos.mount(SDCard(), "/sd")
+            return True
+        else:
             return False 
 
     def empty_sd(self):
@@ -34,3 +33,9 @@ class SD_Card:
         imgFile.write(file)
         imgFile.close()
     
+async def main():
+    sdcard = SD_Card()
+    sdcard.mount_sd()
+
+if __name__ == "__main__":
+    uasyncio.run(main())
